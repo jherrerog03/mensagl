@@ -20,7 +20,7 @@ Resources:
   VPC:
     Type: 'AWS::EC2::VPC'
     Properties:
-      CidrBlock: '10.225.0.0/16'
+      CidrBlock: '10.211.0.0/16'
       Tags:
         - Key: Name
           Value: !Sub 'vpc-mensagl-2025-${NOMBRE_ALUMNO}'
@@ -29,28 +29,28 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.225.1.0/24'
+      CidrBlock: '10.211.1.0/24'
       AvailabilityZone: 'us-east-1a'
   
   SubnetPublic2:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.225.2.0/24'
+      CidrBlock: '10.211.2.0/24'
       AvailabilityZone: 'us-east-1b'
   
   SubnetPrivate1:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.225.3.0/24'
+      CidrBlock: '10.211.3.0/24'
       AvailabilityZone: 'us-east-1a'
   
   SubnetPrivate2:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.225.4.0/24'
+      CidrBlock: '10.211.4.0/24'
       AvailabilityZone: 'us-east-1b'
   
   InternetGateway:

@@ -3,8 +3,8 @@ set -x  # Activar modo de depuración
 
 # Variables
 role="$1"  # "primary" o "secondary"
-primary_ip="10.225.3.10"
-secondary_ip="10.225.3.11"
+primary_ip="10.211.3.10"
+secondary_ip="10.211.3.11"
 db_user="admin"
 db_password="Admin123"
 db_name="prosody"

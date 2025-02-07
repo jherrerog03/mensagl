@@ -40,16 +40,16 @@ exec > "$LOG_FILE" 2>&1
 ##############################
 
 # Crear VPC
-VPC_ID=$(aws ec2 create-vpc --cidr-block "10.225.0.0/16" --query 'Vpc.VpcId' --output text)
+VPC_ID=$(aws ec2 create-vpc --cidr-block "10.211.0.0/16" --query 'Vpc.VpcId' --output text)
 aws ec2 create-tags --resources "$VPC_ID" --tags Key=Name,Value="vpc-mensagl-2025-${NOMBRE_ALUMNO}"
 
 # Crear Subnets publicas
-SUBNET_PUBLIC1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.225.1.0/24" --availability-zone "${REGION}a" --query 'Subnet.SubnetId' --output text)
-SUBNET_PUBLIC2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.225.2.0/24" --availability-zone "${REGION}b" --query 'Subnet.SubnetId' --output text)
+SUBNET_PUBLIC1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.211.1.0/24" --availability-zone "${REGION}a" --query 'Subnet.SubnetId' --output text)
+SUBNET_PUBLIC2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.211.2.0/24" --availability-zone "${REGION}b" --query 'Subnet.SubnetId' --output text)
 
 # Crear Subnets privadas
-SUBNET_PRIVATE1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.225.3.0/24" --availability-zone "${REGION}a" --query 'Subnet.SubnetId' --output text)
-SUBNET_PRIVATE2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.225.4.0/24" --availability-zone "${REGION}b" --query 'Subnet.SubnetId' --output text)
+SUBNET_PRIVATE1_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.211.3.0/24" --availability-zone "${REGION}a" --query 'Subnet.SubnetId' --output text)
+SUBNET_PRIVATE2_ID=$(aws ec2 create-subnet --vpc-id "$VPC_ID" --cidr-block "10.211.4.0/24" --availability-zone "${REGION}b" --query 'Subnet.SubnetId' --output text)
 
 # Crear Internet Gateway
 IGW_ID=$(aws ec2 create-internet-gateway --query 'InternetGateway.InternetGatewayId' --output text)
@@ -186,7 +186,7 @@ echo "RDS Endpoint: $RDS_ENDPOINT"
 INSTANCE_NAME="proxy-prosody"
 SUBNET_ID="${SUBNET_PUBLIC1_ID}"
 SECURITY_GROUP_ID="${SG_PROXY_ID}"
-PRIVATE_IP="10.225.1.10"
+PRIVATE_IP="10.211.1.10"
 INSTANCE_TYPE="t2.micro"
 VOLUME_SIZE=8
 
@@ -206,7 +206,7 @@ echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 # PROXY-2
 INSTANCE_NAME="proxy-wordpress"
 SUBNET_ID="${SUBNET_PUBLIC2_ID}"
-PRIVATE_IP="10.225.2.10"
+PRIVATE_IP="10.211.2.10"
 
 USER_DATA_SCRIPT=$(cat DATOS-DE-USUARIO/haproxy_wordpress.sh)
 
@@ -228,7 +228,7 @@ echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 INSTANCE_NAME="sgbd_principal-zona1"
 SUBNET_ID="${SUBNET_PRIVATE1_ID}"
 SECURITY_GROUP_ID="${SG_MYSQL_ID}"
-PRIVATE_IP="10.225.3.10"
+PRIVATE_IP="10.211.3.10"
 
 # Cargar el script para la base de datos primaria
 USER_DATA_SCRIPT=$(sed 's/role=".*"/role="primary"/' DATOS-DE-USUARIO/configuracion-bd-primaria-y-slave.sh)
@@ -247,7 +247,7 @@ echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 
 # sgbd_secundario
 INSTANCE_NAME="sgbd_replica-zona1"
-PRIVATE_IP="10.225.3.11"
+PRIVATE_IP="10.211.3.11"
 
 # Cargar el script para la base de datos secundaria
 USER_DATA_SCRIPT=$(sed 's/role=".*"/role="secondary"/' DATOS-DE-USUARIO/configuracion-bd-primaria-y-slave.sh)
@@ -272,7 +272,7 @@ echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 INSTANCE_NAME="mensajeria-1"
 SUBNET_ID="${SUBNET_PRIVATE1_ID}"
 SECURITY_GROUP_ID="${SG_MENSAJERIA_ID}"
-PRIVATE_IP="10.225.3.20"
+PRIVATE_IP="10.211.3.20"
 
 #USER_DATA_SCRIPT=$(cat <<EOF
 #EOF
@@ -292,7 +292,7 @@ PRIVATE_IP="10.225.3.20"
 
 # # mensajeria-2
 # INSTANCE_NAME="mensajeria-2"
-# PRIVATE_IP="10.225.3.30"
+# PRIVATE_IP="10.211.3.30"
 
 # INSTANCE_ID=$(aws ec2 run-instances \
 #     --image-id "$AMI_ID" \
@@ -312,7 +312,7 @@ PRIVATE_IP="10.225.3.20"
 INSTANCE_NAME="soporte-1"
 SUBNET_ID="${SUBNET_PRIVATE2_ID}"
 SECURITY_GROUP_ID="${SG_CMS_ID}"
-PRIVATE_IP="10.225.4.10"
+PRIVATE_IP="10.211.4.10"
 
 USER_DATA_SCRIPT=$(cat <<EOF
 #!/bin/bash
@@ -385,7 +385,7 @@ echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 # INSTANCE_NAME="soporte-2"
 # SUBNET_ID="${SUBNET_PRIVATE2_ID}"
 # SECURITY_GROUP_ID="${SG_CMS_ID}"
-# PRIVATE_IP="10.225.4.11"
+# PRIVATE_IP="10.211.4.11"
 
 # USER_DATA_SCRIPT=$(cat <<EOF
 # #!/bin/#!/bin/bash
@@ -408,9 +408,9 @@ echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 # EOF2
 # sudo -u ubuntu -k -- wp core download --path=/var/www/html
 # sudo -u ubuntu -k -- wp core config --dbname=${DB_NAME} --dbuser=${DB_USERNAME} --dbpass=${DB_PASSWORD} --dbhost=${RDS_ENDPOINT} --dbprefix=wp_ --path=/var/www/html
-# sudo -u ubuntu -k -- wp core install --url=10.225.4.100  --title=Site_Title --admin_user=${DB_USERNAME} --admin_password=${DB_PASSWORD} --admin_email=majam02@educantabria.es --path=/var/www/html
-# #sudo -u ubuntu -k -- wp option update home 'http://10.225.4.10' --path=/var/www/html
-# #sudo -u ubuntu -k -- wp option update siteurl 'http://10.225.4.10' --path=/var/www/html
+# sudo -u ubuntu -k -- wp core install --url=10.211.4.100  --title=Site_Title --admin_user=${DB_USERNAME} --admin_password=${DB_PASSWORD} --admin_email=majam02@educantabria.es --path=/var/www/html
+# #sudo -u ubuntu -k -- wp option update home 'http://10.211.4.10' --path=/var/www/html
+# #sudo -u ubuntu -k -- wp option update siteurl 'http://10.211.4.10' --path=/var/www/html
 # sudo -u ubuntu -k -- wp plugin install supportcandy --activate --path=/var/www/html
 # echo "WP configurado / montado"
 # EOF

@@ -8,7 +8,7 @@ BACKUP_CFG_PATH="/etc/haproxy/haproxy.cfg.bak"
 
 
 DUCKDNS_DOMAIN="jherrerog-prosody.duckdns.org" # CAMBIAR POR DOMINIO DE PROSODY
-DUCKDNS_TOKEN="d9c2144c-529b-4781-80b7-20ff1a7595de" # PONER TOKEN DE CUENTA
+DUCKDNS_TOKEN="3e33e440-fdf0-4558-8a8a-0c95c0bc813b" # PONER TOKEN DE CUENTA
 
 SSL_PATH="/etc/letsencrypt/live/$DUCKDNS_DOMAIN"
 CERT_PATH="$SSL_PATH/fullchain.pem"

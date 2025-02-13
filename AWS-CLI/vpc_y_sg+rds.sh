@@ -369,10 +369,10 @@ backup_db() {
 }
 
 # Backup de sgbd_principal-zona1
-backup_db "10.225.3.10" "nombre_db_principal" "usuario_db" "contraseña_db"
+backup_db "10.211.3.10" "nombre_db_principal" "usuario_db" "contraseña_db"
 
 # Backup de sgbd_replica-zona1
-backup_db "10.225.3.11" "nombre_db_replica" "usuario_db" "contraseña_db"
+backup_db "10.211.3.11" "nombre_db_replica" "usuario_db" "contraseña_db"
 
 # Backup de RDS
 backup_db "$RDS_ENDPOINT" "$DB_NAME" "$DB_USERNAME" "$DB_PASSWORD"
@@ -387,12 +387,12 @@ echo "$BACKUP_SCRIPT" > backup-db.sh
 chmod +x backup-db.sh
 
 # Copiar el script de backup a las instancias de base de datos
-scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.225.3.10:/home/ubuntu/
-scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.225.3.11:/home/ubuntu/
+scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.211.3.10:/home/ubuntu/
+scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.211.3.11:/home/ubuntu/
 
 # Configurar el cron job en las instancias de base de datos
-ssh -i "${KEY_NAME}.pem" ubuntu@10.225.3.10 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
-ssh -i "${KEY_NAME}.pem" ubuntu@10.225.3.11 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
+ssh -i "${KEY_NAME}.pem" ubuntu@10.211.3.10 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
+ssh -i "${KEY_NAME}.pem" ubuntu@10.211.3.11 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
 
 echo "Cron job configurado para realizar copias de seguridad diarias a las 3 AM."
 

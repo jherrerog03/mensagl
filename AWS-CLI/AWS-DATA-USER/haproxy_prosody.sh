@@ -3,70 +3,72 @@
 # Variables
 HAPROXY_CFG_PATH="/etc/haproxy/haproxy.cfg"
 BACKUP_CFG_PATH="/etc/haproxy/haproxy.cfg.bak"
-
-# CONFIGURACION DUCKDNS
-
-
-DUCKDNS_DOMAIN="jherrerog-prosody.duckdns.org" # CAMBIAR POR DOMINIO DE PROSODY
-DUCKDNS_TOKEN="3e33e440-fdf0-4558-8a8a-0c95c0bc813b" # PONER TOKEN DE CUENTA
-
-SSL_PATH="/etc/letsencrypt/live/$DUCKDNS_DOMAIN"
-CERT_PATH="$SSL_PATH/fullchain.pem"
+DUCKDNS_DOMAIN="jherrerog-prosody"
+DUCKDNS_TOKEN="3e33e440-fdf0-4558-8a8a-0c95c0bc813b"
+DUCKDNS_DOMAIN_CERT="jherrerog-prosody.duckdns.org"
+SSL_PATH="/etc/letsencrypt/live/${DUCKDNS_DOMAIN}"
+CERT_PATH="${SSL_PATH}/fullchain.pem"
 LOG_FILE="/var/log/script.log"
 
-# Redirigir toda la salida a LOG_FILE
-exec > >(tee -a $LOG_FILE) 2>&1
+# Redirige toda la salida al archivo de registro LOG_FILE
+exec > >(sudo tee -a "${LOG_FILE}") 2>&1
 
-# CONFIGURAR DUCKDNS
-mkdir -p /home/ubuntu/duckdns
+# Configuración de DUCKDNS
+sudo mkdir -p /home/ubuntu/duckdns
 
-cat <<EOL > /home/ubuntu/duckdns/duck.sh
-echo url="https://www.duckdns.org/update?domains=$DUCKDNS_DOMAIN&token=$DUCKDNS_TOKEN&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
+# Crea el script de actualización de DuckDNS
+sudo cat <<EOL > /home/ubuntu/duckdns/duck.sh
+#!/bin/bash
+echo url="https://www.duckdns.org/update?domains=${DUCKDNS_DOMAIN}&token=${DUCKDNS_TOKEN}&ip=" | curl -k -o /home/ubuntu/duckdns/duck.log -K -
 EOL
 
+# Cambia la propiedad y los permisos del script
 sudo chown ubuntu:ubuntu /home/ubuntu/duckdns/duck.sh
-sudo chmod 700 /home/ubuntu/duckdns/duck.sh
+sudo chmod 777 /home/ubuntu/duckdns/duck.sh
 
-# Agregar el cron job para ejecutar el script cada 5 minutos
-(crontab -l 2>/dev/null; echo "*/5 * * * * /home/ubuntu/duckdns/duck.sh >/dev/null 2>&1") | crontab -
+# Agrega la tarea al crontab para ejecutarse cada 5 minutos
+CRON_JOB="@reboot /home/ubuntu/duckdns/duck.sh >/dev/null 2>&1"
+(crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
 
-# Probar el script
+# Prueba el script
 sudo chmod +x /home/ubuntu/duckdns/duck.sh
 sudo /home/ubuntu/duckdns/duck.sh
 
-# Verificar el resultado del último intento
-cat /home/ubuntu/duckdns/duck.log
+# Verifica el resultado del último intento
+sudo cat /home/ubuntu/duckdns/duck.log
 
-# INSTALACION DE CERTBOT
-sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install certbot -y
+# Instala Certbot
+sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install -y certbot
 
-# CONFIGURACION DE LET'S ENCRYPT (Certbot)
-if [ -f "$CERT_PATH" ]; then
+# Configuración de Let's Encrypt (Certbot)
+if [ -f "${CERT_PATH}" ]; then
+    # Renueva el certificado si ya existe
     sudo certbot renew --non-interactive --quiet
 else
-    sudo certbot certonly --standalone -d $DUCKDNS_DOMAIN --non-interactive --agree-tos -m admin@$DUCKDNS_DOMAIN
+    # Solicita un nuevo certificado
+    sudo certbot certonly --standalone -d "${DUCKDNS_DOMAIN_CERT}" --non-interactive --agree-tos --email jherrerog03@educantabria.es
 fi
 
-# FUSIONAR ARCHIVOS DE CERTIFICADO
-sudo cat /etc/letsencrypt/live/$DUCKDNS_DOMAIN/fullchain.pem /etc/letsencrypt/live/$DUCKDNS_DOMAIN/privkey.pem | sudo tee /etc/letsencrypt/live/$DUCKDNS_DOMAIN/haproxy.pem > /dev/null
+# Combina los archivos de certificado para HAProxy
+sudo cat "${SSL_PATH}/fullchain.pem" "${SSL_PATH}/privkey.pem" | sudo tee "${SSL_PATH}/haproxy.pem" > /dev/null
 
-# DAR PERMISOS AL CERTIFICADO
-sudo chmod 644 /etc/letsencrypt/live/$DUCKDNS_DOMAIN/haproxy.pem
-sudo chmod 755 -R /etc/letsencrypt/live/$DUCKDNS_DOMAIN
+# Establece permisos para el certificado
+sudo chmod 644 "${SSL_PATH}/haproxy.pem"
+sudo chmod 755 -R "${SSL_PATH}"
 sudo chmod 755 /etc/letsencrypt/live/
 
-# INSTALACION DE HAPROXY
+# Instala HAProxy
 sudo apt-get update
 sudo apt-get install -y haproxy
 
-# COPIA DE SEGURIDAD DE LA CONFIGURACION INICIAL
-sudo cp "$HAPROXY_CFG_PATH" "$BACKUP_CFG_PATH"
+# Crea una copia de seguridad de la configuración inicial de HAProxy
+sudo cp "${HAPROXY_CFG_PATH}" "${BACKUP_CFG_PATH}"
 
-# CONFIGURACION DE HAPROXY
-sudo tee "$HAPROXY_CFG_PATH" > /dev/null <<EOL
+# Configura HAProxy
+sudo tee "${HAPROXY_CFG_PATH}" > /dev/null <<EOL
 global
-    log /dev/log    local0
-    log /dev/log    local1 notice
+    log /dev/log local0
+    log /dev/log local1 notice
     chroot /var/lib/haproxy
     stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
     stats timeout 30s
@@ -75,13 +77,13 @@ global
     daemon
 
 defaults
-    log     global
-    mode    http
-    option  httplog
-    option  dontlognull
+    log global
+    mode http
+    option httplog
+    option dontlognull
     timeout connect 5000ms
-    timeout client  50000ms
-    timeout server  50000ms
+    timeout client 50000ms
+    timeout server 50000ms
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
@@ -98,7 +100,7 @@ frontend xmpp_front
 
 frontend http_xmpp
     bind *:80
-    bind *:443 ssl crt /etc/letsencrypt/live/$DUCKDNS_DOMAIN/haproxy.pem
+    bind *:443 ssl crt ${SSL_PATH}/haproxy.pem
     mode http
     redirect scheme https if !{ ssl_fc }
     default_backend http_back
@@ -112,7 +114,7 @@ backend xmpp_back
 
 backend http_back
     mode http
-    balance source
+    balance roundrobin
     server mensajeria4 10.211.3.20:80 check
 
 backend db_back
@@ -122,10 +124,9 @@ backend db_back
     server db_secondary 10.211.3.11:3306 check backup
 EOL
 
-# REINICIAR Y HABILITAR HAPROXY
+# Reinicia y habilita HAProxy
 sudo systemctl restart haproxy
 sudo systemctl enable haproxy
 
-# VERIFICAR ESTADO DE HAPROXY
+# Verifica el estado de HAProxy
 sudo systemctl status haproxy --no-pager
-

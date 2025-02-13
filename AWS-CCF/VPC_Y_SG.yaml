@@ -1,4 +1,3 @@
-AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Plantilla de CloudFormation para crear VPC, Subnets, Internet Gateway, NAT Gateway y Security Groups'
 
 Parameters:

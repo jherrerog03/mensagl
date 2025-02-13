@@ -3,7 +3,7 @@
 # ARCHIVO DE LOG
 LOG_FILE="laboratorio.log"
 # Redirigir toda la salida al archivo de log
-
+exec > "$LOG_FILE" 2>&1
 
 ###########################################                       
 #            VARIABLES DE PRUEBA          #
@@ -31,15 +31,11 @@ echo "Clave SSH creada y almacenada en: ${KEY_NAME}.pem"
 echo "Contenido de la clave SSH almacenada en variable:"
 echo "${PEM_KEY}"
 
-
 # Variables para RDS, se pueden cambiar los valores por los deseados
 RDS_INSTANCE_ID="wordpress-db"
 read -r -p "Ingrese el nombre de la instancia RDS / BD: " DB_NAME
 read -r -p "Ingrese el nombre de usuario de la BD: " DB_USERNAME
 read -r -p "Ingrese la contraseña de la BD: " DB_PASSWORD
-
-
-exec > "$LOG_FILE" 2>&1
 
 ##############################                       
 #             VPC            #
@@ -151,7 +147,6 @@ aws rds create-db-subnet-group \
     --db-subnet-group-name wp-rds-subnet-group \
     --db-subnet-group-description "RDS Subnet Group for WordPress" \
     --subnet-ids "$SUBNET_PRIVATE1_ID" "$SUBNET_PRIVATE2_ID"
-
 
 # SG de RDS
 SG_ID_RDS=$(aws ec2 create-security-group \
@@ -277,7 +272,6 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --output text)
 echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 
-
 ##############
 #    MySQL   #
 ##############
@@ -321,6 +315,80 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --output text)
 echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 
+##################################################
+# Crear Bucket S3 y Configurar Copias Incrementales
+##################################################
+
+# Crear un bucket S3 para las copias de seguridad
+BUCKET_NAME="backup-db-${NOMBRE_ALUMNO}-$(date +%s)"
+aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$REGION"
+echo "Bucket S3 creado: $BUCKET_NAME"
+
+# Crear script de backup
+BACKUP_SCRIPT=$(cat <<EOF
+#!/bin/bash
+
+# Variables
+BUCKET_NAME="$BUCKET_NAME"
+DATE=\$(date +%Y-%m-%d)
+BACKUP_DIR="/backups"
+LOG_FILE="/var/log/backup-db.log"
+
+# Crear directorio de backups si no existe
+mkdir -p "\$BACKUP_DIR"
+
+# Función para hacer backup de una base de datos
+backup_db() {
+    DB_HOST=\$1
+    DB_NAME=\$2
+    DB_USER=\$3
+    DB_PASS=\$4
+    BACKUP_FILE="\$BACKUP_DIR/\$DB_NAME-\$DATE.sql"
+
+    echo "Realizando backup de \$DB_NAME en \$DB_HOST..." >> "\$LOG_FILE"
+    mysqldump -h "\$DB_HOST" -u "\$DB_USER" -p"\$DB_PASS" "\$DB_NAME" > "\$BACKUP_FILE"
+
+    if [ \$? -eq 0 ]; then
+        echo "Backup de \$DB_NAME completado." >> "\$LOG_FILE"
+        # Subir el backup al bucket S3
+        aws s3 cp "\$BACKUP_FILE" "s3://\$BUCKET_NAME/\$DB_NAME/\$DATE/"
+        if [ \$? -eq 0 ]; then
+            echo "Backup de \$DB_NAME subido a S3." >> "\$LOG_FILE"
+        else
+            echo "Error al subir el backup de \$DB_NAME a S3." >> "\$LOG_FILE"
+        fi
+    else
+        echo "Error al realizar el backup de \$DB_NAME." >> "\$LOG_FILE"
+    fi
+}
+
+# Backup de sgbd_principal-zona1
+backup_db "10.211.3.10" "nombre_db_principal" "usuario_db" "contraseña_db"
+
+# Backup de sgbd_replica-zona1
+backup_db "10.211.3.11" "nombre_db_replica" "usuario_db" "contraseña_db"
+
+# Backup de RDS
+backup_db "$RDS_ENDPOINT" "$DB_NAME" "$DB_USERNAME" "$DB_PASSWORD"
+
+# Limpiar backups antiguos (más de 7 días)
+find "\$BACKUP_DIR" -type f -mtime +7 -exec rm {} \;
+EOF
+)
+
+# Guardar el script de backup en un archivo local
+echo "$BACKUP_SCRIPT" > backup-db.sh
+chmod +x backup-db.sh
+
+# Copiar el script de backup a las instancias de base de datos
+scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.211.3.10:/home/ubuntu/
+scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.211.3.11:/home/ubuntu/
+
+# Configurar el cron job en las instancias de base de datos
+ssh -i "${KEY_NAME}.pem" ubuntu@10.211.3.10 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
+ssh -i "${KEY_NAME}.pem" ubuntu@10.211.3.11 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
+
+echo "Cron job configurado para realizar copias de seguridad diarias a las 3 AM."
 
 ##############
 #    XMPP    #

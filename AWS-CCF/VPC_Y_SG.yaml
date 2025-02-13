@@ -1,4 +1,4 @@
-Description: 'Plantilla de CloudFormation para crear VPC, Subnets, Internet Gateway, NAT Gateway y Security Groups'
+Description: 'Plantilla de CloudFormation para crear VPC, Subnets, Internet Gateway, NAT Gateway, Instancias y Security Groups'
 
 Parameters:
   NOMBRE_ALUMNO:

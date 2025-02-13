@@ -3,7 +3,7 @@
 # ARCHIVO DE LOG
 LOG_FILE="laboratorio.log"
 # Redirigir toda la salida al archivo de log
-exec > "$LOG_FILE" 2>&1
+
 
 ###########################################                       
 #            VARIABLES DE PRUEBA          #
@@ -31,11 +31,15 @@ echo "Clave SSH creada y almacenada en: ${KEY_NAME}.pem"
 echo "Contenido de la clave SSH almacenada en variable:"
 echo "${PEM_KEY}"
 
+
 # Variables para RDS, se pueden cambiar los valores por los deseados
 RDS_INSTANCE_ID="wordpress-db"
 read -r -p "Ingrese el nombre de la instancia RDS / BD: " DB_NAME
 read -r -p "Ingrese el nombre de usuario de la BD: " DB_USERNAME
 read -r -p "Ingrese la contraseña de la BD: " DB_PASSWORD
+
+
+exec > "$LOG_FILE" 2>&1
 
 ##############################                       
 #             VPC            #
@@ -147,6 +151,7 @@ aws rds create-db-subnet-group \
     --db-subnet-group-name wp-rds-subnet-group \
     --db-subnet-group-description "RDS Subnet Group for WordPress" \
     --subnet-ids "$SUBNET_PRIVATE1_ID" "$SUBNET_PRIVATE2_ID"
+
 
 # SG de RDS
 SG_ID_RDS=$(aws ec2 create-security-group \
@@ -272,6 +277,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --output text)
 echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
 
+
 ##############
 #    MySQL   #
 ##############
@@ -363,10 +369,10 @@ backup_db() {
 }
 
 # Backup de sgbd_principal-zona1
-backup_db "10.211.3.10" "nombre_db_principal" "usuario_db" "contraseña_db"
+backup_db "10.225.3.10" "nombre_db_principal" "usuario_db" "contraseña_db"
 
 # Backup de sgbd_replica-zona1
-backup_db "10.211.3.11" "nombre_db_replica" "usuario_db" "contraseña_db"
+backup_db "10.225.3.11" "nombre_db_replica" "usuario_db" "contraseña_db"
 
 # Backup de RDS
 backup_db "$RDS_ENDPOINT" "$DB_NAME" "$DB_USERNAME" "$DB_PASSWORD"
@@ -381,12 +387,12 @@ echo "$BACKUP_SCRIPT" > backup-db.sh
 chmod +x backup-db.sh
 
 # Copiar el script de backup a las instancias de base de datos
-scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.211.3.10:/home/ubuntu/
-scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.211.3.11:/home/ubuntu/
+scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.225.3.10:/home/ubuntu/
+scp -i "${KEY_NAME}.pem" backup-db.sh ubuntu@10.225.3.11:/home/ubuntu/
 
 # Configurar el cron job en las instancias de base de datos
-ssh -i "${KEY_NAME}.pem" ubuntu@10.211.3.10 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
-ssh -i "${KEY_NAME}.pem" ubuntu@10.211.3.11 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
+ssh -i "${KEY_NAME}.pem" ubuntu@10.225.3.10 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
+ssh -i "${KEY_NAME}.pem" ubuntu@10.225.3.11 "echo '0 3 * * * /home/ubuntu/backup-db.sh' | crontab -"
 
 echo "Cron job configurado para realizar copias de seguridad diarias a las 3 AM."
 

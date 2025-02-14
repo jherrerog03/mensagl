@@ -375,7 +375,7 @@ backup_db "10.211.3.10" "nombre_db_principal" "usuario_db" "contraseña_db"
 backup_db "10.211.3.11" "nombre_db_replica" "usuario_db" "contraseña_db"
 
 # Backup de RDS
-backup_db "$RDS_ENDPOINT" "$DB_NAME" "$DB_USERNAME" "$DB_PASSWORD"
+backup_db "${RDS_ENDPOINT}" "${DB_NAME}" "${DB_USERNAME}" "${DB_PASSWORD}"
 
 # Limpiar backups antiguos (más de 7 días)
 find "\$BACKUP_DIR" -type f -mtime +7 -exec rm {} \;
@@ -890,3 +890,4 @@ INSTANCE_ID=$(aws ec2 run-instances \
     --query "Instances[0].InstanceId" \
     --output text)
 echo "${INSTANCE_NAME} creada: ${INSTANCE_ID}"
+ 

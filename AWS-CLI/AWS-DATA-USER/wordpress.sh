@@ -23,7 +23,7 @@ sudo systemctl restart apache2
 
 sudo -u www-data wp-cli core download --path='/var/www/html'
 sudo -u www-data wp-cli core config --dbname=wordpress_db --dbuser=admin --dbpass=Admin123 --dbhost='wordpress-db.c1vddmtpdv5b.us-east-1.rds.amazonaws.com' --dbprefix=wp_ --path='/var/www/html'
-sudo -u www-data wp-cli core install --url='http://jherrerog-wp.duckdns.org' --title='Soporte - jherrerog' --admin_user='admin' --admin_password='Admin123' --admin_email='jherrerog03@educantabria.es' --path='/var/www/html'
+sudo -u www-data wp-cli core install --url='http://jherrerog-wordpress.duckdns.org' --title='Soporte - jherrerog' --admin_user='admin' --admin_password='Admin123' --admin_email='jherrerog03@educantabria.es' --path='/var/www/html'
 sudo -u www-data wp-cli plugin install supportcandy --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install user-registration --activate --path='/var/www/html'
 sudo -u www-data wp-cli plugin install wps-hide-login --activate --path='/var/www/html'
@@ -49,9 +49,9 @@ sudo sed -i '1i\
     $list = explode(",", $_SERVER["HTTP_X_FORWARDED_FOR"]);\
     $_SERVER["REMOTE_ADDR"] = $list[0];\
 }\
-$_SERVER["HTTP_HOST"] = "jherrerog-wp.duckdns.org";\
-$_SERVER["REMOTE_ADDR"] = "jherrerog-wp.duckdns.org";\
-$_SERVER["SERVER_ADDR"] = "jherrerog-wp.duckdns.org";\
+$_SERVER["HTTP_HOST"] = "jherrerog-wordpress.duckdns.org";\
+$_SERVER["REMOTE_ADDR"] = "jherrerog-wordpress.duckdns.org";\
+$_SERVER["SERVER_ADDR"] = "jherrerog-wordpress.duckdns.org";\
 ' /var/www/html/wp-config.php
 
 # HACER UNA VEZ EJECUTADO

@@ -535,7 +535,6 @@ PRIVATE_IP="10.211.4.10"
 # sudo chmod -R 755 /var/www/html
 # sudo chown -R www-data:www-data /var/www/html
 
-# # Reiniciar Apache para aplicar cambios
 # sudo a2enmod rewrite
 # sudo systemctl restart apache2
 
@@ -575,9 +574,9 @@ PRIVATE_IP="10.211.4.10"
 #     $list = explode(",", $_SERVER["HTTP_X_FORWARDED_FOR"]);\
 #     $_SERVER["REMOTE_ADDR"] = $list[0];\
 # }\
-# $_SERVER["HTTP_HOST"] = "jherrerog-wordp.duckdns.org";\
-# $_SERVER["REMOTE_ADDR"] = "jherrerog-wordp.duckdns.org";\
-# $_SERVER["SERVER_ADDR"] = "jherrerog-wordp.duckdns.org";\
+# $_SERVER["HTTP_HOST"] = "jherrerog-wordpress.duckdns.org";\
+# $_SERVER["REMOTE_ADDR"] = "jherrerog-wordpress.duckdns.org";\
+# $_SERVER["SERVER_ADDR"] = "jherrerog-wordpress.duckdns.org";\
 # ' /var/www/html/wp-config.php
 
 # # Configurar SSL

@@ -23,19 +23,18 @@ echo url="https://www.duckdns.org/update?domains=${DUCKDNS_DOMAIN}&token=${DUCKD
 EOL
 
 # Cambia la propiedad y los permisos del script
-sudo chown ubuntu:ubuntu /home/ubuntu/duckdns/duck.sh
-sudo chmod 777 /home/ubuntu/duckdns/duck.sh
+cd /home/ubuntu/duckdns
+chmod 700 duck.sh
 
 # Agrega la tarea al crontab para ejecutarse cada 5 minutos
 CRON_JOB="@reboot /home/ubuntu/duckdns/duck.sh >/dev/null 2>&1"
 (crontab -l 2>/dev/null; echo "$CRON_JOB") | crontab -
 
 # Prueba el script
-sudo chmod +x /home/ubuntu/duckdns/duck.sh
-sudo /home/ubuntu/duckdns/duck.sh
+/home/ubuntu/duckdns/duck.sh
 
 # Verifica el resultado del último intento
-sudo cat /home/ubuntu/duckdns/duck.log
+cat /home/ubuntu/duckdns/duck.log
 
 # Instala Certbot
 sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt install -y certbot
